@@ -228,8 +228,6 @@ void ABGMRES(double *iter, double *relres, double *x){
   	// NE-SOR inner iterations: w = B r
   	opNESOR(b, x);
 
-  	// mexErrMsgTxt("Stop");
-
 	tmp = one / beta;
   	for (j=0; j<n; j++) {
   		Aei[j] *= omg;
@@ -311,7 +309,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 
 			// Derivation of the approximate solution x_k
 			ind_k = k+1;
-			for (l=0; l<ind_k; l++) y[l] = g[l];
+			for (i=0; i<ind_k; i++) y[i] = g[i];
 
 			// Backward substitution
 			dtrsv(charU, charN, charN, &ind_k, H, &sizeHrow, y, &inc1);
@@ -361,7 +359,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 	if (iter[0] == 0.0) {
 
 		ind_k = k;
-		for (l=0; l<ind_k; l++) y[l] = g[l];
+		for (i=0; i<ind_k; i++) y[i] = g[i];
 
 		// Backward substitution
 		dtrsv(charU, charN, charN, &ind_k, H, &sizeHrow, y, &inc1);
