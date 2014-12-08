@@ -143,7 +143,7 @@ void opNESOR(double *rhs, double *x)
 // Outer iterations: AB-GMRES
 void ABGMRES(double *iter, double *relres, double *x){
 
-	double *V, *H, *c, *g, *r, *s, *w, *y;
+	double *V, *H, *c, *g, *r, *s, *w, *y, *tmp_x;
 	double beta, d, inprod, min_nrmr, nrmb, nrmr, tmp, Tol;
 	int i, j, k;
 	char charU[1] = "U", charN[1] = "N";
@@ -196,6 +196,12 @@ void ABGMRES(double *iter, double *relres, double *x){
 	if ((y = (double *)mxMalloc(sizeof(double) * (maxit))) == NULL) {
 		mexErrMsgTxt("Failed to allocate y");
 	}
+
+	// Allocate tmp_x
+	if ((tmp_x = (double *)mxMalloc(sizeof(double) * m)) == NULL) {
+		mexErrMsgTxt("Failed to allocate tmp_x");
+	}
+
 
 	iter[0] = zero;
 	min_nrmr = 2.0e+52;
@@ -309,7 +315,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 
 			// Derivation of the approximate solution x_k
 			ind_k = k+1;
-			for (i=0; i<ind_k; i++) y[i] = g[i];
+			for (i=0; i<(int)(ind_k); i++) y[i] = g[i];
 
 			// Backward substitution
 			dtrsv(charU, charN, charN, &ind_k, H, &sizeHrow, y, &inc1);
@@ -318,21 +324,50 @@ void ABGMRES(double *iter, double *relres, double *x){
 			dgemv(charN, &n, &ind_k, &one, &V[0], &sizen, y, &inc1, &zero, w, &inc1);
 
 			// NESOR(w, x);
-			for (i=0; i<m; i++) x[i] = zero;
+			for (i=0; i<m; i++) tmp_x[i] = zero;
 			i = nin;
 			while (i--) {
 				for (j=0; j<n; j++) {
 					d = zero;
 					k1 = jp[j];
 					k2 = jp[j+1];
-					for (l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
+					for (l=k1; l<k2; l++) d += AC[l]*tmp_x[ia[l]];
 					d = (w[j] - d) * Aei[j];
-					for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
+					for (l=k1; l<k2; l++) tmp_x[ia[l]] += d*AC[l];
 				}
 			}
 
+			// r = A x
+			for (j=0; j<n; j++) {
+				tmp = zero;
+				k1 = jp[j];
+				k2 = jp[j+1];
+				for (l=k1; l<k2; l++) tmp += AC[l]*tmp_x[ia[l]];
+				r[j] = tmp;
+			}
+
+			for (j=0; j<n; j++) r[j] = b[j] - r[j];
+
+			nrmr = dnrm2(&n, r, &inc1);
+
+			if (nrmr < min_nrmr) {
+				for (i=0; i<m; i++) x[i] = tmp_x[i];
+					min_nrmr = nrmr;
+					iter[0] = (double)(k+1);
+				}
+			}
+
+			relres[k] = nrmr / nrmb;
+
+			// mexPrintf("%d, %.15e\n", k+1, nrmr/nrmb);
+
+			// Convergence check
+			if (nrmr < Tol) {
+
+
 		 	iter[0] = (double)(k+1);
 
+		 	mxFree(tmp_x);
 	  		mxFree(y);
 	  		mxFree(s);
 	  		mxFree(c);
@@ -359,7 +394,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 	if (iter[0] == 0.0) {
 
 		ind_k = k;
-		for (i=0; i<ind_k; i++) y[i] = g[i];
+		for (i=0; i<(int)(ind_k); i++) y[i] = g[i];
 
 		// Backward substitution
 		dtrsv(charU, charN, charN, &ind_k, H, &sizeHrow, y, &inc1);
@@ -386,6 +421,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 
 	}
 
+	mxFree(tmp_x);
 	mxFree(y);
 	mxFree(s);
 	mxFree(c);
