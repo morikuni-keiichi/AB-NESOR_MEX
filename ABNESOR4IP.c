@@ -35,129 +35,129 @@ void usage()
 }
 
 
-// 2-norm
-double nrm2(double *x, mwSize k) {
+// // 2-norm
+// double nrm2(double *x, mwSize k) {
 
-// Purpose
-// =======
-//
-// nrm2 returns the euclidean norm of a vector via the function
-// name, so that
-//
-// nrm2 := sqrt( x'*x )
-//
-// Further Details
-// ===============
-//
-// -- This version written on 25-October-1982.
-// Modified on 14-October-1993 to inline the call to DLASSQ.
-// Sven Hammarling, Nag Ltd.
-// translated into C and changed by Keiichi Morikun
-//
-// References:
-//
-// Jack Dongarra, Jim Bunch, Cleve Moler, and Pete Stewart,
-// LINPACK User's Guide,
-// Society for Industrial and Applied Mathematics (SIAM),
-// Philadelphia, 1979,
-// ISBN-10: 089871172X,
-// ISBN-13: 978-0-898711-72-1.
-//
-// Charles Lawson, Richard Hanson, David Kincaid, and Fred Krogh,
-// Algorithm 539,
-// Basic Linear Algebra Subprograms for Fortran Usage,
-// ACM Transactions on Mathematical Software,
-// Volume 5, Number 3, September 1979, Pages 308-323.
-//
-// =====================================================================
+// // Purpose
+// // =======
+// //
+// // nrm2 returns the euclidean norm of a vector via the function
+// // name, so that
+// //
+// // nrm2 := sqrt( x'*x )
+// //
+// // Further Details
+// // ===============
+// //
+// // -- This version written on 25-October-1982.
+// // Modified on 14-October-1993 to inline the call to DLASSQ.
+// // Sven Hammarling, Nag Ltd.
+// // translated into C and changed by Keiichi Morikun
+// //
+// // References:
+// //
+// // Jack Dongarra, Jim Bunch, Cleve Moler, and Pete Stewart,
+// // LINPACK User's Guide,
+// // Society for Industrial and Applied Mathematics (SIAM),
+// // Philadelphia, 1979,
+// // ISBN-10: 089871172X,
+// // ISBN-13: 978-0-898711-72-1.
+// //
+// // Charles Lawson, Richard Hanson, David Kincaid, and Fred Krogh,
+// // Algorithm 539,
+// // Basic Linear Algebra Subprograms for Fortran Usage,
+// // ACM Transactions on Mathematical Software,
+// // Volume 5, Number 3, September 1979, Pages 308-323.
+// //
+// // =====================================================================
 
-	double absxi, scale = zero, ssq = one, tmp;
-	int i;
+// 	double absxi, scale = zero, ssq = one, tmp;
+// 	int i;
 
-	for (i=0; i<k; i++) {
-		if (x[i] != zero) {
-	  		absxi = fabs(x[i]);
-	    	if (scale <= absxi) {
-	    		tmp = scale/absxi;
-	    		ssq = one + ssq*tmp*tmp;
-	    		scale = absxi;
-	    	} else {
-	    		tmp = absxi/scale;
-	    		ssq += tmp*tmp;
-			}
-		}
-	}
+// 	for (i=0; i<k; i++) {
+// 		if (x[i] != zero) {
+// 	  		absxi = fabs(x[i]);
+// 	    	if (scale <= absxi) {
+// 	    		tmp = scale/absxi;
+// 	    		ssq = one + ssq*tmp*tmp;
+// 	    		scale = absxi;
+// 	    	} else {
+// 	    		tmp = absxi/scale;
+// 	    		ssq += tmp*tmp;
+// 			}
+// 		}
+// 	}
 
-	return scale*sqrt(ssq);
-}
+// 	return scale*sqrt(ssq);
+// }
 
 
-// Givens rotation
-void drotg(double *da, double *db, double *c, double *s)
-{
+// // Givens rotation
+// void drotg(double *da, double *db, double *c, double *s)
+// {
 
-// Purpose
-// =======
-//
-// drotg construct givens plane rotation.
-//
-// Further Details
-// ===============
-//
-// jack dongarra, linpack, 3/11/78.
-// translated into C and changed by Keiichi Morikuni
-//
-// References:
-//
-// Jack Dongarra, Jim Bunch, Cleve Moler, and Pete Stewart,
-// LINPACK User's Guide,
-// Society for Industrial and Applied Mathematics (SIAM),
-// Philadelphia, 1979,
-// ISBN-10: 089871172X,
-// ISBN-13: 978-0-898711-72-1.
-//
-// Charles Lawson, Richard Hanson, David Kincaid, and Fred Krogh,
-// Algorithm 539,
-// Basic Linear Algebra Subprograms for Fortran Usage,
-// ACM Transactions on Mathematical Software,
-// Volume 5, Number 3, September 1979, Pages 308-323.
-//
-// =====================================================================
+// // Purpose
+// // =======
+// //
+// // drotg construct givens plane rotation.
+// //
+// // Further Details
+// // ===============
+// //
+// // jack dongarra, linpack, 3/11/78.
+// // translated into C and changed by Keiichi Morikuni
+// //
+// // References:
+// //
+// // Jack Dongarra, Jim Bunch, Cleve Moler, and Pete Stewart,
+// // LINPACK User's Guide,
+// // Society for Industrial and Applied Mathematics (SIAM),
+// // Philadelphia, 1979,
+// // ISBN-10: 089871172X,
+// // ISBN-13: 978-0-898711-72-1.
+// //
+// // Charles Lawson, Richard Hanson, David Kincaid, and Fred Krogh,
+// // Algorithm 539,
+// // Basic Linear Algebra Subprograms for Fortran Usage,
+// // ACM Transactions on Mathematical Software,
+// // Volume 5, Number 3, September 1979, Pages 308-323.
+// //
+// // =====================================================================
 
-	double r, roe, scale, z;
+// 	double r, roe, scale, z;
 
-	roe = *db;
+// 	roe = *db;
 
-    if (fabs(*da) > fabs(*db)) roe = *da;
+//     if (fabs(*da) > fabs(*db)) roe = *da;
 
-    scale = fabs(*da) + fabs(*db);
+//     scale = fabs(*da) + fabs(*db);
 
-    if (scale != zero) {
+//     if (scale != zero) {
 
-	   	r = scale*sqrt(pow(*da/scale, 2.0) + pow(*db/scale, 2.0));
+// 	   	r = scale*sqrt(pow(*da/scale, 2.0) + pow(*db/scale, 2.0));
 
-		if (roe<0) r = -r;
-	    *c = *da / r;
-	    *s = *db / r;
-	    z = one;
+// 		if (roe<0) r = -r;
+// 	    *c = *da / r;
+// 	    *s = *db / r;
+// 	    z = one;
 
-	    if (fabs(*da) > fabs(*db)) z = *s;
+// 	    if (fabs(*da) > fabs(*db)) z = *s;
 
-	    if (fabs(*db) >= fabs(*da) && *c != zero) z = one / *c;
+// 	    if (fabs(*db) >= fabs(*da) && *c != zero) z = one / *c;
 
-		*da = r;
-		*db = z;
+// 		*da = r;
+// 		*db = z;
 
- 	} else {
+//  	} else {
 
- 		*c = one;
-    	*s = zero;
+//  		*c = one;
+//     	*s = zero;
 
-    	*da = zero;
-    	*db = zero;
-    }
+//     	*da = zero;
+//     	*db = zero;
+//     }
 
-}
+// }
 
 
 // Automatic parameter tuning for NE-SOR inner iterations
@@ -166,6 +166,7 @@ void opNESOR(double *rhs, double *x)
 	double d, e, res1, res2 = zero, tmp, tmp1, tmp2, *r, *y;
 	int k;
 	mwSize i, j, k1, k2, l;
+	ptrdiff_t inc1 = 1;
 
 	// Allocate r
 	if ((r = (double *)mxMalloc(sizeof(double) * (n))) == NULL) {
@@ -184,9 +185,6 @@ void opNESOR(double *rhs, double *x)
 	// Tune the number of inner iterations
 	k = 50;
 	while(k--) {
-	// for (k=1; k<50; k++) {
-
-		for (i=0; i<m; i++) y[i] = x[i];
 
 		for (j=0; j<n; j++) {
 			d = zero;
@@ -209,6 +207,8 @@ void opNESOR(double *rhs, double *x)
 			nin = 50 - k;
 			break;
 		}
+
+		for (i=0; i<m; i++) y[i] = x[i];
 
 	}
 
@@ -243,9 +243,9 @@ void opNESOR(double *rhs, double *x)
 			r[j] = tmp;
 		}
 
-		for (j=0; j<n; j++) r[j] = b[j] - r[j];
+		for (j=0; j<n; j++) r[j] -= b[j];
 
-		res1 = nrm2(r, n);
+		res1 = dnrm2(&n, r, &inc1);
 
 		if (k < 19) {
 			if (res1 > res2) {
@@ -268,7 +268,7 @@ void opNESOR(double *rhs, double *x)
 // Outer iterations: AB-GMRES
 void ABGMRES(double *iter, double *relres, double *x){
 
-	double *V, *H, *c, *g, *r, *s, *w, *y, *tmp_x;
+	double *V, *H, *c, *g, *r, *s, *w, *y;
 	double beta, d, inprod, min_nrmr, nrmb, nrmr, tmp, Tol;
 	int i, j, k;
 	char charU[1] = "U", charN[1] = "N";
@@ -285,11 +285,6 @@ void ABGMRES(double *iter, double *relres, double *x){
 	// // Allocate H[maxit * (maxit+1)]
 	if ((H = (double *)mxMalloc(sizeof(double) * maxit * (maxit+1))) == NULL) {
 		mexErrMsgTxt("Failed to allocate H");
-	}
-
-	// Allocate tmp_x
-	if ((tmp_x = (double *)mxMalloc(sizeof(double) * m)) == NULL) {
-		mexErrMsgTxt("Failed to allocate tmp_x");
 	}
 
 	// Allocate r
@@ -344,7 +339,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 	}
 
 	// norm of b
-  	nrmb = nrm2(b, n);
+  	nrmb = dnrm2(&n, b, &inc1);
 
   	// beta = ||b||2
   	beta = nrmb;
@@ -356,7 +351,7 @@ void ABGMRES(double *iter, double *relres, double *x){
   	g[0] = beta;
 
   	// NE-SOR inner iterations: w = B r
-  	opNESOR(b, tmp_x);
+  	opNESOR(b, x);
 
   	// mexErrMsgTxt("Stop");
 
@@ -370,16 +365,16 @@ void ABGMRES(double *iter, double *relres, double *x){
   	for (k=0; k<maxit; k++) {
 
   		// NE-SOR inner iterations: w = B r
-		for (i=0; i<m; i++) tmp_x[i] = zero;
+		for (i=0; i<m; i++) x[i] = zero;
 		i = nin;
 		while (i--) {
 			for (j=0; j<n; j++) {
 				d = zero;
 				k1 = jp[j];
 				k2 = jp[j+1];
-				for (l=k1; l<k2; l++) d += AC[l]*tmp_x[ia[l]];
+				for (l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
 				d = (V(j, k) - d) * Aei[j];
-				for (l=k1; l<k2; l++) tmp_x[ia[l]] += d*AC[l];
+				for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
 			}
 		}
 
@@ -388,7 +383,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 			tmp = zero;
 			k1 = jp[j];
 			k2 = jp[j+1];
-			for (l=k1; l<k2; l++) tmp += AC[l]*tmp_x[ia[l]];
+			for (l=k1; l<k2; l++) tmp += AC[l]*x[ia[l]];
 			w[j] = tmp;
 		}
 
@@ -413,6 +408,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 		}
 
 		// Apply Givens rotations
+
 		for (i=0; i<k; i++) {
 			tmp = c[i]*H(i, k) + s[i]*H(i+1, k);
 			H(i+1, k) = -s[i]*H(i, k) + c[i]*H(i+1, k);
@@ -439,74 +435,47 @@ void ABGMRES(double *iter, double *relres, double *x){
 		if (nrmr < Tol) {
 
 			// Derivation of the approximate solution x_k
-
-			for (l=0; l<(int)(k+1); l++) y[l] = g[l];
+			ind_k = k+1;
+			for (l=0; l<ind_k; l++) y[l] = g[l];
 
 			// Backward substitution
-			ind_k = k+1;
 			dtrsv(charU, charN, charN, &ind_k, H, &sizeHrow, y, &inc1);
 
 			// w = V y
 			dgemv(charN, &n, &ind_k, &one, &V[0], &sizen, y, &inc1, &zero, w, &inc1);
 
-			// NESOR(w, tmp_x);
-			for (i=0; i<m; i++) tmp_x[i] = zero;
+			// NESOR(w, x);
+			for (i=0; i<m; i++) x[i] = zero;
 			i = nin;
 			while (i--) {
 				for (j=0; j<n; j++) {
 					d = zero;
 					k1 = jp[j];
 					k2 = jp[j+1];
-					for (l=k1; l<k2; l++) d += AC[l]*tmp_x[ia[l]];
+					for (l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
 					d = (w[j] - d) * Aei[j];
-					for (l=k1; l<k2; l++) tmp_x[ia[l]] += d*AC[l];
+					for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
 				}
 			}
 
-			// r = A x
-			for (j=0; j<n; j++) {
-				tmp = zero;
-				k1 = jp[j];
-				k2 = jp[j+1];
-				for (l=k1; l<k2; l++) tmp += AC[l]*tmp_x[ia[l]];
-				r[j] = tmp;
-			}
+		 	iter[0] = (double)(k+1);
 
-			for (j=0; j<n; j++) r[j] = b[j] - r[j];
+	  		mxFree(y);
+	  		mxFree(s);
+	  		mxFree(c);
+	  		mxFree(g);
+	  		mxFree(Aei);
+	  		mxFree(w);
+	  		mxFree(r);
+	  		mxFree(H);
+			mxFree(V);
 
-		 	nrmr = nrm2(r, n);
+			// mexPrintf("Required number of iterations: %d\n", (int)(*iter));
+			// mexPrintf("Successfully converged.\n");
+			// mexPrintf("nin=%d, omg=%.2e\n", nin, omg);
 
-		 	if (nrmr < min_nrmr) {
-		 		for (i=0; i<m; i++) x[i] = tmp_x[i];
-		 		min_nrmr = nrmr;
-		 		iter[0] = (double)(k+1);
-		 	}
+			return;
 
-			relres[k] = nrmr / nrmb;
-
-			// mexPrintf("%d, %.15e\n", k+1, nrmr/nrmb);
-
-		 	// Convergence check
-		  	if (nrmr < Tol) {
-
-		  		mxFree(y);
-		  		mxFree(s);
-		  		mxFree(c);
-		  		mxFree(g);
-		  		mxFree(Aei);
-		  		mxFree(w);
-		  		mxFree(tmp_x);
-		  		mxFree(r);
-		  		mxFree(H);
-				mxFree(V);
-
-				// mexPrintf("Required number of iterations: %d\n", (int)(*iter));
-				// mexPrintf("Successfully converged.\n");
-				// mexPrintf("nin=%d, omg=%.2e\n", nin, omg);
-
-				return;
-
-			}
 		}
 
 	}
@@ -516,10 +485,10 @@ void ABGMRES(double *iter, double *relres, double *x){
 	// Derivation of the approximate solution x_k
 	if (iter[0] == 0.0) {
 
-		for (l=0; l<(int)(k); l++) y[l] = g[l];
+		ind_k = k;
+		for (l=0; l<ind_k; l++) y[l] = g[l];
 
 		// Backward substitution
-		ind_k = k;
 		dtrsv(charU, charN, charN, &ind_k, H, &sizeHrow, y, &inc1);
 
 		// w = V y
@@ -550,7 +519,6 @@ void ABGMRES(double *iter, double *relres, double *x){
 	mxFree(g);
 	mxFree(Aei);
 	mxFree(w);
-	mxFree(tmp_x);
 	mxFree(r);
 	mxFree(H);
 	mxFree(V);
@@ -652,16 +620,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	}
 
 	plhs[0] = mxCreateDoubleMatrix(m, 1, mxREAL);
-	plhs[1] = mxCreateDoubleMatrix(n, 1, mxREAL);
-	plhs[2] = mxCreateDoubleMatrix(maxit, 1, mxREAL);
-	plhs[3] = mxCreateDoubleMatrix(1, 1, mxREAL);
+	plhs[1] = mxCreateDoubleMatrix(maxit, 1, mxREAL);
+	plhs[2] = mxCreateDoubleMatrix(1, 1, mxREAL);
 
     x = mxGetPr(plhs[0]);
     relres = mxGetPr(plhs[1]);
     iter = mxGetPr(plhs[2]);
 
 	// AB-GMRES method for IP
-    ABGMRES(iter, relres, x, y);
+    ABGMRES(iter, relres, x);
 
     // Reshape relres
     mxSetPr(plhs[1], relres);
