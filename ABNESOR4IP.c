@@ -152,11 +152,9 @@ void drotg(double *da, double *db, double *c, double *s)
 
  		*c = one;
     	*s = zero;
-    	r = zero;
-    	z = zero;
 
-    	*da = r;
-    	*db = z;
+    	*da = zero;
+    	*db = zero;
     }
 
 }
@@ -179,8 +177,16 @@ void opNESOR(double *rhs, double *x)
 		mexErrMsgTxt("Failed to allocate y");
 	}
 
+	for (i=0; i<m; i++) x[i] = y[i] = zero;
+
+	nin = 0;
+
 	// Tune the number of inner iterations
-	for (k=1; k<=50; k++) {
+	k = 50;
+	while(k--) {
+	// for (k=1; k<50; k++) {
+
+		for (i=0; i<m; i++) y[i] = x[i];
 
 		for (j=0; j<n; j++) {
 			d = zero;
@@ -191,8 +197,7 @@ void opNESOR(double *rhs, double *x)
 			for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
 		}
 
-		d = zero;
-		e = zero;
+		d = e = zero;
 		for (i=0; i<m; i++) {
 			tmp1 = fabs(x[i]);
 			tmp2 = fabs(x[i] - y[i]);
@@ -200,14 +205,14 @@ void opNESOR(double *rhs, double *x)
 			if (e < tmp2) e = tmp2;
 		}
 
-		if (e<1.0e-1*d || k == 50) {
-			nin = k;
+		if (e<1.0e-1*d) {
+			nin = 50 - k;
 			break;
 		}
 
-		for (i=0; i<m; i++) y[i] = x[i];
-
 	}
+
+	if (nin == 0) nin = 50;
 
 	// Tune the relaxation parameter
 	k = 20;
@@ -322,7 +327,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 		mexErrMsgTxt("Failed to allocate y");
 	}
 
-	iter[0] = 0.0;
+	iter[0] = zero;
 	min_nrmr = 2.0e+52;
 
 	for (j=0; j<n; j++) {
@@ -352,6 +357,8 @@ void ABGMRES(double *iter, double *relres, double *x){
 
   	// NE-SOR inner iterations: w = B r
   	opNESOR(b, tmp_x);
+
+  	// mexErrMsgTxt("Stop");
 
 	tmp = one / beta;
   	for (j=0; j<n; j++) {
