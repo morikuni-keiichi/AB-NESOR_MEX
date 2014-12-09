@@ -29,7 +29,6 @@ void usage()
     mexPrintf("  tol       scalar   tolerance for stopping criterion.\n");
     mexPrintf("  maxit     scalar   maximum number of iterations.\n");
     mexPrintf("  x         m-by-1   resulting approximate solution.\n");
-    mexPrintf("  y         n-by-1   resulting approximate solution.\n");
     mexPrintf("  relres   iter-by-1 relative residual history.\n");
     mexPrintf("  iter      scalar   number of iterations required for convergence.\n");
 }
@@ -232,7 +231,7 @@ void ABGMRES(double *iter, double *relres, double *x){
   	g[0] = beta;
 
   	// NE-SOR inner iterations: w = B r
-  	opNESOR(b, x);
+  	opNESOR(b, tmp_x);
 
 	tmp = one / beta;
   	for (j=0; j<n; j++) {
@@ -244,16 +243,16 @@ void ABGMRES(double *iter, double *relres, double *x){
   	for (k=0; k<maxit; k++) {
 
   		// NE-SOR inner iterations: w = B r
-		for (i=0; i<m; i++) x[i] = zero;
+		for (i=0; i<m; i++) tmp_x[i] = zero;
 		i = nin;
 		while (i--) {
 			for (j=0; j<n; j++) {
 				d = zero;
 				k1 = jp[j];
 				k2 = jp[j+1];
-				for (l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
+				for (l=k1; l<k2; l++) d += AC[l]*tmp_x[ia[l]];
 				d = (V(j, k) - d) * Aei[j];
-				for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
+				for (l=k1; l<k2; l++) tmp_x[ia[l]] += d*AC[l];
 			}
 		}
 
@@ -262,7 +261,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 			tmp = zero;
 			k1 = jp[j];
 			k2 = jp[j+1];
-			for (l=k1; l<k2; l++) tmp += AC[l]*x[ia[l]];
+			for (l=k1; l<k2; l++) tmp += AC[l]*tmp_x[ia[l]];
 			w[j] = tmp;
 		}
 
@@ -438,7 +437,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 // Main
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-	double *iter, *relres, *x, *y;
+	double *iter, *relres, *x;
 	// mwSize nzmax;
 
 	// Check the number of input arguments
