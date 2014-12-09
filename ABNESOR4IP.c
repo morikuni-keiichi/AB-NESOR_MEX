@@ -363,7 +363,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 			// Convergence check
 			if (nrmr < Tol) {
 
-			 	iter[0] = (double)(k+1);
+			 	// iter[0] = (double)(k+1);
 
 			 	mxFree(tmp_x);
 		  		mxFree(y);
@@ -380,7 +380,7 @@ void ABGMRES(double *iter, double *relres, double *x){
 				// mexPrintf("Successfully converged.\n");
 				// mexPrintf("nin=%d, omg=%.2e\n", nin, omg);
 
-			return;
+				return;
 
 			}
 		}
