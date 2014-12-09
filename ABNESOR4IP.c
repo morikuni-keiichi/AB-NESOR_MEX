@@ -346,15 +346,14 @@ void ABGMRES(double *iter, double *relres, double *x){
 				r[j] = tmp;
 			}
 
-			for (j=0; j<n; j++) r[j] = b[j] - r[j];
+			for (j=0; j<n; j++) r[j] -= b[j];
 
 			nrmr = dnrm2(&n, r, &inc1);
 
 			if (nrmr < min_nrmr) {
 				for (i=0; i<m; i++) x[i] = tmp_x[i];
-					min_nrmr = nrmr;
-					iter[0] = (double)(k+1);
-				}
+				min_nrmr = nrmr;
+				iter[0] = (double)(k+1);
 			}
 
 			relres[k] = nrmr / nrmb;
@@ -364,28 +363,27 @@ void ABGMRES(double *iter, double *relres, double *x){
 			// Convergence check
 			if (nrmr < Tol) {
 
+			 	iter[0] = (double)(k+1);
 
-		 	iter[0] = (double)(k+1);
+			 	mxFree(tmp_x);
+		  		mxFree(y);
+		  		mxFree(s);
+		  		mxFree(c);
+		  		mxFree(g);
+		  		mxFree(Aei);
+		  		mxFree(w);
+		  		mxFree(r);
+		  		mxFree(H);
+				mxFree(V);
 
-		 	mxFree(tmp_x);
-	  		mxFree(y);
-	  		mxFree(s);
-	  		mxFree(c);
-	  		mxFree(g);
-	  		mxFree(Aei);
-	  		mxFree(w);
-	  		mxFree(r);
-	  		mxFree(H);
-			mxFree(V);
-
-			// mexPrintf("Required number of iterations: %d\n", (int)(*iter));
-			// mexPrintf("Successfully converged.\n");
-			// mexPrintf("nin=%d, omg=%.2e\n", nin, omg);
+				// mexPrintf("Required number of iterations: %d\n", (int)(*iter));
+				// mexPrintf("Successfully converged.\n");
+				// mexPrintf("nin=%d, omg=%.2e\n", nin, omg);
 
 			return;
 
+			}
 		}
-
 	}
 
 	mexPrintf("Failed to converge.\n");
