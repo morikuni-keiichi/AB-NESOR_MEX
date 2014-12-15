@@ -548,7 +548,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
    		usage();
     	mexErrMsgTxt("4th argument must be a scalar");
     } else {
-   		maxit = (size_t)*mxGetPr(prhs[3]);
+   		maxit = (mwIndex)*mxGetPr(prhs[3]);
    		if (maxit < 1) {
    			usage();
    			mexErrMsgTxt("4th argument must be a positive scalar");
