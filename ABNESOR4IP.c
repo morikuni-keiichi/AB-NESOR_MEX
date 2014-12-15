@@ -45,15 +45,15 @@ void usage()
 void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwIndex *nin)
 {
 	double *AC, d, e, res1, res2 = zero, tmp, tmp1, tmp2, *r, *y;
-   mwIndex i, *ia, j, *jp, k, k1, k2, l;
-   mwSize m, n;
+	mwIndex i, *ia, j, *jp, k, k1, k2, l;
+	mwSize m, n;
 	ptrdiff_t inc1 = 1;
 
-   AC = A->AC;
-   ia = A->ia;
-   jp = A->jp;
-   m  = A->m;
-   n  = A->n;
+	AC = A->AC;
+	ia = A->ia;
+	jp = A->jp;
+	m  = A->m;
+	n  = A->n;
 
 	// Allocate r
 	if ((r = (double *)mxMalloc(sizeof(double) * (n))) == NULL) {
@@ -167,7 +167,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 	m  = A->m;
 	n  = A->n;
 
-   // // Allocate V[n * (maxit+1)]
+	// Allocate V[n * (maxit+1)]
 	if ((V = (double *)mxMalloc(sizeof(double) * n * (maxit+1))) == NULL) {
 		mexErrMsgTxt("Failed to allocate H");
 	}
@@ -559,6 +559,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	plhs[0] = mxCreateDoubleMatrix(m, 1, mxREAL);
 	plhs[1] = mxCreateDoubleMatrix(maxit, 1, mxREAL);
 	plhs[2] = mxCreateDoubleMatrix(1, 1, mxREAL);
+
 
    x = mxGetPr(plhs[0]);
    relres = mxGetPr(plhs[1]);
