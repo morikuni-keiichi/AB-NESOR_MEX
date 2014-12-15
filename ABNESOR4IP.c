@@ -140,7 +140,6 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
 				for (i=0; i<m; i++) x[i] = y[i];
 				return;
 			} else if (k == 1) {
-				*omg = 1.0e-1;
 				return;
 			}
 		}
@@ -156,20 +155,17 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
 void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relres, double *x){
 
 	double *c, *g, *r, *s, *w, *y, *tmp_x, *Aei, *AC, *H, *V;
-	double beta, d, inprod, min_nrmr, nrmb, nrmr, omg, tmp, Tol;
-   mwIndex i, *ia, j, *jp, k, k1, k2, l, nin;
-   mwSize m, n;
+	double beta, d, inprod, min_nrmr, nrmb, nrmr, invnrmb, omg, tmp, Tol;
+	mwIndex i, *ia, j, *jp, k, k1, k2, l, nin;
+	mwSize m, n;
 	char charU[1] = "U", charN[1] = "N";
 	ptrdiff_t ind_k, inc1 = 1, sizeHrow = maxit+1;
 
-	#define V(i, j) V[i + j*n]
-	#define H(i, j) H[i + j*(maxit+1)]
-
-   AC = A->AC;
-   ia = A->ia;
-   jp = A->jp;
-   m  = A->m;
-   n  = A->n;
+	AC = A->AC;
+	ia = A->ia;
+	jp = A->jp;
+	m  = A->m;
+	n  = A->n;
 
    // // Allocate V[n * (maxit+1)]
 	if ((V = (double *)mxMalloc(sizeof(double) * n * (maxit+1))) == NULL) {
@@ -221,6 +217,9 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 		mexErrMsgTxt("Failed to allocate tmp_x");
 	}
 
+	#define V(i, j) V[i + j*n]
+	#define H(i, j) H[i + j*(maxit+1)]
+
 	iter[0] = zero;
 	min_nrmr = 2.0e+52;
 
@@ -239,6 +238,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 
 	// norm of b
   	nrmb = dnrm2(&n, b, &inc1);
+  	invnrmb = one / nrmb;
 
   	// beta = ||b||2
   	beta = nrmb;
@@ -325,7 +325,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 
 		nrmr = fabs(g[k+1]);
 
-		relres[k] = nrmr / nrmb;
+		relres[k] = nrmr * invnrmb;
 
 		// mexPrintf("%d %.15e\n", k+1, relres[k]);
 
@@ -375,7 +375,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 				iter[0] = (double)(k+1);
 			}
 
-			relres[k] = nrmr / nrmb;
+			relres[k] = nrmr * invnrmb;
 
 			// mexPrintf("%d, %.15e\n", k+1, nrmr/nrmb);
 
@@ -495,7 +495,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // Check the number of input arguments
     if (nrhs < 1) {
     	usage();
-      mexErrMsgTxt("Please input A.");
+     	mexErrMsgTxt("Please input A.");
     }
 
 	// Check the 1st argument
@@ -540,10 +540,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	// Check the 4th argument
 	// Set maxit
-   if (nrhs < 4) {
-      maxit = n;
-    	// mexPrintf("Default: max number of iterations is set to the number of columns.\n");
-   } else {
+  	if (nrhs < 4) {
+    	maxit = n;
+		// mexPrintf("Default: max number of iterations is set to the number of columns.\n");
+	} else {
       if (mxIsComplex(prhs[3]) || mxGetM(prhs[3])*mxGetN(prhs[3])!=1) {
    		usage();
     	mexErrMsgTxt("4th argument must be a scalar");
