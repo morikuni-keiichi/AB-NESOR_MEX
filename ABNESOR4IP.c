@@ -13,7 +13,7 @@ typedef struct sparseCCS
 } ccs;
 
 
-double eps = 1.0e-6, one = 1.0, zero = 0.0;
+double eps = 1.0e-6, ieps = 1.0e-1, one = 1.0, zero = 0.0;
 mwSize maxnin = 50;
 
 
@@ -40,7 +40,7 @@ void usage()
 // Automatic parameter tuning for NE-SOR inner iterations
 void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwIndex *nin)
 {
-	double *AC, d, e, res1, res2 = zero, tmp, tmp1, tmp2, *r, *y;
+	double *AC, d, e, res1, res10, res2 = zero, tmp, tmp1, tmp2, *r, *y, *y10;
 	mwIndex i, *ia, inc1 = 1, j, *jp, k, k1, k2, l;
 	mwSize m, n;
 
@@ -60,85 +60,158 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
 		mexErrMsgTxt("Failed to allocate y");
 	}
 
-	for (i=0; i<m; i++) x[i] = y[i] = zero;
+    // Allocate y10
+    if ((y10 = (double *)mxCalloc(m, sizeof(double))) == NULL) {
+        mexErrMsgTxt("Failed to allocate y10");
+    }
+
+	for (i=0; i<m; ++i) x[i] = zero;
 
 	*nin = 0;
 
 	// Tune the number of inner iterations
-	k = maxnin;
-	while(k--) {
+    for (k=0; k<maxnin; ++k) {
 
-		for (j=0; j<n; j++) {
+		for (j=0; j<n; ++j) {
 			k1 = jp[j];
 			k2 = jp[j+1];
-			for (d=zero, l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
+			for (d=zero, l=k1; l<k2; ++l) d += AC[l]*x[ia[l]];
 			d = (rhs[j] - d) * Aei[j];
-			for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
+			for (l=k1; l<k2; ++l) x[ia[l]] += d*AC[l];
 		}
 
-		for (d =e=zero, i=0; i<m; i++) {
+		for (d =e=zero, i=0; i<m; ++i) {
 			tmp1 = fabs(x[i]);
 			tmp2 = fabs(x[i] - y[i]);
 			if (d < tmp1) d = tmp1;
 			if (e < tmp2) e = tmp2;
 		}
 
-		if (e<0.1*d) {
-			*nin = maxnin - k;
+		if (e < ieps*d) {
+			*nin = k+1;
+
+            // w = A x
+            for (j=0; j<n; ++j) {
+                k1 = jp[j];
+                k2 = jp[j+1];
+                for (tmp=zero, l=k1; l<k2; ++l) tmp += AC[l]*x[ia[l]];
+                r[j] = tmp;
+            }
+
+            for (j=0; j<n; ++j) r[j] -= rhs[j];
+            res10 = dnrm2(&n, r, &inc1);
+
+            for (i=0; i<m; ++i) y10[i] = x[i];
+
 			break;
 		}
 
-		for (i=0; i<m; i++) y[i] = x[i];
+		for (i=0; i<m; ++i) y[i] = x[i];
 
 	}
 
-	if (nin == 0) *nin = maxnin;
+	if (*nin == 0) {
+        *nin = maxnin;
+
+        // w = A x
+        for (j=0; j<n; ++j) {
+            k1 = jp[j];
+            k2 = jp[j+1];
+            for (tmp=zero, l=k1; l<k2; ++l) tmp += AC[l]*x[ia[l]];
+            r[j] = tmp;
+        }
+
+        for (j=0; j<n; ++j) r[j] -= rhs[j];
+        res10 = dnrm2(&n, r, &inc1);
+
+        for (i=0; i<m; ++i) y10[i] = x[i];
+
+    }
 
 	// Tune the relaxation parameter
-	k = 20;
-	while (k--) {
+    *omg = 1.9;
 
-		*omg = 1.0e-1 * (double)(k); // omg = 1.9, 1.8, ..., 0.1
+    for (i=0; i<m; ++i) x[i] = zero;
 
-		for (i=0; i<m; i++) x[i] = zero;
+    i = *nin;
+    while (i--) {
+        for (j=0; j<n; ++j) {
+            k1 = jp[j];
+            k2 = jp[j+1];
+            for (d=zero, l=k1; l<k2; ++l) d += AC[l]*x[ia[l]];
+            d = (*omg) * (rhs[j] - d) * Aei[j];
+            for (l=k1; l<k2; ++l) x[ia[l]] += d*AC[l];
+        }
+    }
 
-		i = *nin;
-		while (i--) {
-			for (j=0; j<n; j++) {
-				k1 = jp[j];
-				k2 = jp[j+1];
-				for (d=zero, l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
-				d = (*omg) * (rhs[j] - d) * Aei[j];
-				for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
-			}
-		}
+    // w = A x
+    for (j=0; j<n; ++j) {
+        k1 = jp[j];
+        k2 = jp[j+1];
+        for (tmp=zero, l=k1; l<k2; ++l) tmp += AC[l]*x[ia[l]];
+        r[j] = tmp;
+    }
 
-		// w = A x
-		for (j=0; j<n; j++) {
-			k1 = jp[j];
-			k2 = jp[j+1];
-			for (tmp=zero, l=k1; l<k2; l++) tmp += AC[l]*x[ia[l]];
-			r[j] = tmp;
-		}
+    for (j=0; j<n; ++j) r[j] -= rhs[j];
 
-		for (j=0; j<n; j++) r[j] -= rhs[j];
+    res2 = dnrm2(&n, r, &inc1);
 
-		res1 = dnrm2(&n, r, &inc1);
+    for (k=18; k>0; --k) {
 
-		if (k < 19) {
-			if (res1 > res2) {
-				*omg += 1.0e-1;
-				for (i=0; i<m; i++) x[i] = y[i];
-				return;
-			} else if (k == 1) {
-				return;
-			}
-		}
+        if (k != 10) {
 
-		res2 = res1;
+            for (i=0; i<m; ++i) y[i] = x[i];
 
-		for (i=0; i<m; i++) y[i] = x[i];
+    		*omg = 1.0e-1 * (double)(k); // omg = 1.8, 1.8, ..., 0.1
+
+    		for (i=0; i<m; ++i) x[i] = zero;
+
+    		i = *nin;
+    		while (i--) {
+    			for (j=0; j<n; ++j) {
+    				k1 = jp[j];
+    				k2 = jp[j+1];
+    				for (d=zero, l=k1; l<k2; ++l) d += AC[l]*x[ia[l]];
+    				d = (*omg) * (rhs[j] - d) * Aei[j];
+    				for (l=k1; l<k2; ++l) x[ia[l]] += d*AC[l];
+    			}
+    		}
+
+    		// w = A x
+    		for (j=0; j<n; ++j) {
+    			k1 = jp[j];
+    			k2 = jp[j+1];
+    			for (tmp=zero, l=k1; l<k2; ++l) tmp += AC[l]*x[ia[l]];
+    			r[j] = tmp;
+    		}
+
+    		for (j=0; j<n; ++j) r[j] -= rhs[j];
+
+    		res1 = dnrm2(&n, r, &inc1);
+
+    		if (res1 > res2) {
+    			*omg += 1.0e-1;
+    			return;
+    		}
+
+            res2 = res1;
+
+        } else {
+
+            if (res10 > res2) {
+                *omg = 1.1e+0;
+                return;
+            }
+
+            for (i=0; i<m; ++i) x[i] = y10[i];
+
+            res2 = res10;
+
+        }
 	}
+
+    return;
+
 }
 
 
@@ -213,10 +286,10 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 	iter[0] = zero;
 	min_nrmr = 2.0e+52;
 
-	for (j=0; j<n; j++) {
+	for (j=0; j<n; ++j) {
 		k1 = jp[j];
 		k2 = jp[j+1];
-		for (inprod=zero, l=k1; l<k2; l++) inprod += AC[l]*AC[l];
+		for (inprod=zero, l=k1; l<k2; ++l) inprod += AC[l]*AC[l];
 		if (inprod > zero) {
 			Aei[j] = one / inprod;
 		} else {
@@ -242,37 +315,37 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
    opNESOR(A, b, Aei, tmp_x, &omg, &nin);
 
    tmp = one / beta;
-  	for (j=0; j<n; j++) {
+  	for (j=0; j<n; ++j) {
   		Aei[j] *= omg;
   		V[j] = tmp * b[j];	// Normalize
   	}
 
   	// Main loop
-  	for (k=0; k<maxit; k++) {
+  	for (k=0; k<maxit; ++k) {
 
   		// NE-SOR inner iterations: w = B r
-		for (i=0; i<m; i++) tmp_x[i] = zero;
+		for (i=0; i<m; ++i) tmp_x[i] = zero;
 		i = nin;
 		while (i--) {
-			for (j=0; j<n; j++) {
+			for (j=0; j<n; ++j) {
 				k1 = jp[j];
 				k2 = jp[j+1];
-				for (d=zero, l=k1; l<k2; l++) d += AC[l]*tmp_x[ia[l]];
+				for (d=zero, l=k1; l<k2; ++l) d += AC[l]*tmp_x[ia[l]];
 				d = (V(j, k) - d) * Aei[j];
-				for (l=k1; l<k2; l++) tmp_x[ia[l]] += d*AC[l];
+				for (l=k1; l<k2; ++l) tmp_x[ia[l]] += d*AC[l];
 			}
 		}
 
 		// w = A x
-		for (j=0; j<n; j++) {
+		for (j=0; j<n; ++j) {
 			k1 = jp[j];
 			k2 = jp[j+1];
-			for (tmp=zero, l=k1; l<k2; l++) tmp += AC[l]*tmp_x[ia[l]];
+			for (tmp=zero, l=k1; l<k2; ++l) tmp += AC[l]*tmp_x[ia[l]];
 			w[j] = tmp;
 		}
 
 		// Modified Gram-Schmidt orthogonzlization
-		for (kp1=k+1, i=0; i<kp1; i++) {
+		for (kp1=k+1, i=0; i<kp1; ++i) {
 			pt = &V[i*n];
 			tmp = -ddot(&n, w, &inc1, pt, &inc1);
 			daxpy(&n, &tmp, pt, &inc1, w, &inc1);
@@ -280,19 +353,20 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 		}
 
 		// h_{k+1, k}
-        H(kp1, k) = tmp = dnrm2(&n, w, &inc1);
+        tmp = dnrm2(&n, w, &inc1);
+        H(kp1, k) = tmp;
 
 		// Check breakdown
 		if (tmp > zero) {
-			for (tmp=one/tmp, j=0; j<n; j++) V(j, kp1) = tmp * w[j];
+			for (tmp=one/tmp, j=0; j<n; ++j) V(j, kp1) = tmp * w[j];
 		} else {
-			mexPrintf("h_k+1, k = %.15e, at step %d\n", H(kp1, k), kp1);
+			mexPrintf("h_{k+1, k} = %.15e, at step %d\n", H(kp1, k), kp1);
 			mexErrMsgTxt("Breakdown.");
 		}
 
 		// Apply Givens rotations
 
-		for (i=0; i<k; i++) {
+		for (i=0; i<k; ++i) {
 			tmp = c[i]*H(i, k) + s[i]*H(i+1, k);
 			H(i+1, k) = -s[i]*H(i, k) + c[i]*H(i+1, k);
 			H(i, k) = tmp;
@@ -314,7 +388,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 		if (nrmr < Tol) {
 
 			// Derivation of the approximate solution x_k
-			for (i=0; i<kp1; i++) y[i] = g[i];
+			for (i=0; i<kp1; ++i) y[i] = g[i];
 
 			// Backward substitution
 			dtrsv(charU, charN, charN, &kp1, H, &sizeHrow, y, &inc1);
@@ -323,32 +397,32 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 			dgemv(charN, &n, &kp1, &one, &V[0], &n, y, &inc1, &zero, w, &inc1);
 
 			// NESOR(w, x);
-			for (i=0; i<m; i++) tmp_x[i] = zero;
+			for (i=0; i<m; ++i) tmp_x[i] = zero;
 			i = nin;
 			while (i--) {
-				for (j=0; j<n; j++) {
+				for (j=0; j<n; ++j) {
 					k1 = jp[j];
 					k2 = jp[j+1];
-					for (d=zero, l=k1; l<k2; l++) d += AC[l]*tmp_x[ia[l]];
+					for (d=zero, l=k1; l<k2; ++l) d += AC[l]*tmp_x[ia[l]];
 					d = (w[j] - d) * Aei[j];
-					for (l=k1; l<k2; l++) tmp_x[ia[l]] += d*AC[l];
+					for (l=k1; l<k2; ++l) tmp_x[ia[l]] += d*AC[l];
 				}
 			}
 
 			// r = A x
-			for (j=0; j<n; j++) {
+			for (j=0; j<n; ++j) {
 				k1 = jp[j];
 				k2 = jp[j+1];
-				for (tmp=zero, l=k1; l<k2; l++) tmp += AC[l]*tmp_x[ia[l]];
+				for (tmp=zero, l=k1; l<k2; ++l) tmp += AC[l]*tmp_x[ia[l]];
 				r[j] = tmp;
 			}
 
-			for (j=0; j<n; j++) r[j] -= b[j];
+			for (j=0; j<n; ++j) r[j] -= b[j];
 
 			nrmr = dnrm2(&n, r, &inc1);
 
 			if (nrmr < min_nrmr) {
-				for (i=0; i<m; i++) x[i] = tmp_x[i];
+				for (i=0; i<m; ++i) x[i] = tmp_x[i];
 				min_nrmr = nrmr;
 				iter[0] = (double)(kp1);
 			}
@@ -385,25 +459,25 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 	// Derivation of the approximate solution x_k
 	if (iter[0] == 0.0) {
 
-		for (i=0; i<k; i++) y[i] = g[i];
+		for (i=0; i<k; ++i) y[i] = g[i];
 
 		// Backward substitution
 		dtrsv(charU, charN, charN, &k, H, &sizeHrow, y, &inc1);
 
 		// w = V y
-		for (j=0; j<n; j++) w[j] = zero;
+		for (j=0; j<n; ++j) w[j] = zero;
 		dgemv(charN, &n, &k, &one, &V[0], &n, y, &inc1, &zero, w, &inc1);
 
 		// NESOR(w, x);
-		for (i=0; i<m; i++) x[i] = zero;
+		for (i=0; i<m; ++i) x[i] = zero;
 		i = nin;
 		while (i--) {
-			for (j=0; j<n; j++) {
+			for (j=0; j<n; ++j) {
 				k1 = jp[j];
 				k2 = jp[j+1];
-				for (d=zero, l=k1; l<k2; l++) d += AC[l]*x[ia[l]];
+				for (d=zero, l=k1; l<k2; ++l) d += AC[l]*x[ia[l]];
 				d = (w[j] - d) * Aei[j];
-				for (l=k1; l<k2; l++) x[ia[l]] += d*AC[l];
+				for (l=k1; l<k2; ++l) x[ia[l]] += d*AC[l];
 			}
 		}
 
