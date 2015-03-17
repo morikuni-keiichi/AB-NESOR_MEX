@@ -1,6 +1,8 @@
 /* ABNESOR.c */
 #include "mex.h"
 #include "blas.h"
+#include <math.h>
+
 
 // compressed column storage data structure
 typedef struct sparseCCS
@@ -21,10 +23,9 @@ mwSize maxnin = 50;
 void usage()
 {
     mexPrintf("ABNESOR: AB-GMRES method preconditioned by NE-SOR inner iterations\n");
-    mexPrintf("This Matlab-MEX function is for the minimum-norm solution of \n");
-    mexPrintf("linear systems Ax=b.\n");
-    mexPrintf("  x = ABNESOR4(A', b);\n");
-    mexPrintf("  [x, relres, iter] = ABNESOR4(A', b, tol, maxit);\n\n");
+    mexPrintf("         is for the minimum-norm solution of a linear system Ax=b.\n");
+    mexPrintf("  x = ABNESOR(A', b);\n");
+    mexPrintf("  [x, relres, iter] = ABNESOR(A', b, tol, maxit);\n\n");
     mexPrintf("  valuable | size | remark \n");
     mexPrintf("  A'        m-by-n   coefficient matrix. must be sparse array.\n");
     mexPrintf("  ** REMARK:   matrix A must be TRANSPOSED ** \n");
@@ -40,15 +41,9 @@ void usage()
 // Automatic parameter tuning for NE-SOR inner iterations
 void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwIndex *nin)
 {
-	double *AC, d, e, res1, res10, res2 = zero, tmp, tmp1, tmp2, *r, *y, *y10;
-	mwIndex i, *ia, inc1 = 1, j, *jp, k, k1, k2, l;
-	mwSize m, n;
-
-	AC = A->AC;
-	ia = A->ia;
-	jp = A->jp;
-	m  = A->m;
-	n  = A->n;
+	double *AC = A->AC, d, e, res1, res10, res2 = zero, tmp, tmp1, tmp2, *r, *y, *y10;
+	mwIndex i, *ia = A->ia, inc1 = 1, j, *jp = A->jp, k, k1, k2, l;
+	mwSize m = A->m, n = A->n;
 
 	// Allocate r
 	if ((r = (double *)mxMalloc(sizeof(double) * (n))) == NULL) {
@@ -88,7 +83,7 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
 		}
 
 		if (e < ieps*d) {
-			*nin = k+1;
+			*nin = k + 1;
 
             // w = A x
             for (j=0; j<n; ++j) {
@@ -210,17 +205,11 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
 // Outer iterations: AB-GMRES
 void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relres, double *x){
 
-	double *c, *g, *r, *pt, *s, *w, *y, *tmp_x, *Aei, *AC, *H, *V;
+	double *c, *g, *r, *pt, *s, *w, *y, *tmp_x, *Aei, *AC = A->AC, *H, *V;
 	double beta, d, inprod, min_nrmr, nrmb, nrmr, invnrmb, omg, tmp, Tol;
-	mwIndex i, *ia, inc1 = 1, j, *jp, k, k1, k2, kp1, l, nin, sizeHrow = maxit+1;
-	mwSize m, n;
+	mwIndex i, *ia = A->ia, inc1 = 1, j, *jp = A->jp, k, k1, k2, kp1, l, nin, sizeHrow = maxit+1;
+	mwSize m = A->m, n = A->n;
 	char charU[1] = "U", charN[1] = "N";
-
-	AC = A->AC;
-	ia = A->ia;
-	jp = A->jp;
-	m  = A->m;
-	n  = A->n;
 
 	// Allocate V[n * (maxit+1)]
 	if ((V = (double *)mxMalloc(sizeof(double) * n * (sizeHrow))) == NULL) {
@@ -276,7 +265,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 	#define H(i, j) H[i + j*sizeHrow]
 
 	iter[0] = zero;
-	min_nrmr = 2.0e+52;
+	min_nrmr = HUGE_VAL;
 
 	for (j=0; j<n; ++j) {
 		k1 = jp[j];
@@ -301,12 +290,12 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
   	Tol = eps * beta;
 
   	// beta e1
-  	g[0] = beta;
+	g[0] = beta;
 
   	// NE-SOR inner iterations: w = B r
-   opNESOR(A, b, Aei, tmp_x, &omg, &nin);
+	opNESOR(A, b, Aei, tmp_x, &omg, &nin);
 
-   tmp = one / beta;
+	tmp = one / beta;
   	for (j=0; j<n; ++j) {
   		Aei[j] *= omg;
   		V[j] = tmp * b[j];	// Normalize
@@ -494,21 +483,21 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 
 
 /* form sparse matrix data structure */
-ccs *form_ccs(ccs *A, const mxArray *Amat)
+void form_ccs(ccs *A, const mxArray *Amat)
 {
     A->jp = (mwIndex *)mxGetJc(Amat);
     A->ia = (mwIndex *)mxGetIr(Amat);
     A->m = mxGetM(Amat);
     A->n = mxGetN(Amat);
     A->AC = mxGetPr(Amat);
-    return (A) ;
+    return;
 }
 
 
 // Main
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-    ccs *A, Amat;
+    ccs A;
     double *b, *iter, *relres, *x;
     mwIndex maxit;
     mwSize m, n;
@@ -538,12 +527,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         usage();
         mexErrMsgTxt("1st input argument must be a sparse array.");
     } else if (mxIsComplex(prhs[0])) {
+    	usage();
         mexErrMsgTxt("1st input argument must be a real array.");
     }
 
-    A = form_ccs(&Amat, prhs[0]);
-    m = A->m;
-    n = A->n;
+    form_ccs(&A, prhs[0]);
+    m = A.m;
+    n = A.n;
 
 	// Check the 2nd argument
     if (mxGetM(prhs[1]) != n) {
@@ -575,8 +565,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   	if (nrhs < 4) {
     	maxit = n;
 		// mexPrintf("Default: max number of iterations is set to the number of columns.\n");
-	} else {
-      if (mxIsComplex(prhs[3]) || mxGetM(prhs[3])*mxGetN(prhs[3])!=1) {
+	} else if (mxIsComplex(prhs[3]) || mxGetM(prhs[3])*mxGetN(prhs[3])!=1) {
    		usage();
     	mexErrMsgTxt("4th argument must be a scalar");
     } else {
@@ -584,24 +573,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
    		if (maxit < 1) {
    			usage();
    			mexErrMsgTxt("4th argument must be a positive scalar");
-         }
-      }
-   }
+        }
+    }
 
 	plhs[0] = mxCreateDoubleMatrix(m, 1, mxREAL);
 	plhs[1] = mxCreateDoubleMatrix(maxit, 1, mxREAL);
 	plhs[2] = mxCreateDoubleMatrix(1, 1, mxREAL);
 
-   x = mxGetPr(plhs[0]);
-   relres = mxGetPr(plhs[1]);
-   iter = mxGetPr(plhs[2]);
+	x = mxGetPr(plhs[0]);
+	relres = mxGetPr(plhs[1]);
+	iter = mxGetPr(plhs[2]);
 
 	// AB-GMRES method for IP
-   ABGMRES(A, b, maxit, iter, relres, x);
+	ABGMRES(&A, b, maxit, iter, relres, x);
 
-   // Reshape relres
-   mxSetPr(plhs[1], relres);
-   mxSetM(plhs[1], (mwSize)(iter[0]));
-   mxSetN(plhs[1], 1);
+	// Reshape relres
+	mxSetPr(plhs[1], relres);
+	mxSetM(plhs[1], (mwSize)(iter[0]));
+	mxSetN(plhs[1], 1);
 
 }

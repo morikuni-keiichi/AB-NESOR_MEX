@@ -32,7 +32,7 @@ Keiichi Morikuni morikuni@cs.cas.cz
 
 AB-GMRES preconditioned by NE-SOR inner iterations involves the following files:
 
-   ABNESOR4IP.c 	last update December 22, 2014
+   ABNESOR4IP.c 	last update March 14, 2015
    readme     last update December 22, 2014
 
 
