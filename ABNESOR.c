@@ -93,7 +93,7 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
                 r[j] = tmp;
             }
 
-            for (j=0; j<n; ++j) r[j] -= rhs[j];
+            for (j=0; j<n; ++j) r[j] = rhs[j] - r[j];
             res10 = dnrm2(&n, r, &inc1);
 
 			break;
@@ -114,7 +114,7 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
             r[j] = tmp;
         }
 
-        for (j=0; j<n; ++j) r[j] -= rhs[j];
+        for (j=0; j<n; ++j) r[j] = rhs[j] - r[j];
         res10 = dnrm2(&n, r, &inc1);
 
     }
@@ -143,7 +143,7 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
         r[j] = tmp;
     }
 
-    for (j=0; j<n; ++j) r[j] -= rhs[j];
+    for (j=0; j<n; ++j) r[j] = rhs[j] - r[j];
 
     res2 = dnrm2(&n, r, &inc1);
 
@@ -174,7 +174,7 @@ void opNESOR(const ccs *A, double *rhs, double *Aei, double *x, double *omg, mwI
     			r[j] = tmp;
     		}
 
-    		for (j=0; j<n; ++j) r[j] -= rhs[j];
+    		for (j=0; j<n; ++j) r[j] = rhs[j] - r[j];
 
     		res1 = dnrm2(&n, r, &inc1);
 
@@ -398,7 +398,7 @@ void ABGMRES(const ccs *A, double *b, mwIndex maxit, double *iter, double *relre
 				r[j] = tmp;
 			}
 
-			for (j=0; j<n; ++j) r[j] -= b[j];
+			for (j=0; j<n; ++j) r[j] = b[j] - r[j];
 
 			nrmr = dnrm2(&n, r, &inc1);
 
