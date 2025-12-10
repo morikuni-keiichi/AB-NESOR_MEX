@@ -1,10 +1,10 @@
 Matlab-Mex codes in C for the AB-GMRES method preconditioned by the NE-SOR inner iterations
-Copyright 2014 Keiichi Morikuni morikuni@cs.cas.cz, October 26, 2014
+Copyright 2014 Keiichi Morikuni morikuni.keiichi.fw at sign u.tsukuba.ac.jp, October 26, 2014
 URL:   http://researchmap.jp/KeiichiMorikuni/
 
 
 Maintained by
- Keiichi Morikuni <morikuni.keiichi.fw@u.tsukuba.ac.jp>
+ Keiichi Morikuni <morikuni.keiichi.fw at sign u.tsukuba.ac.jp>
  Institute of Systems and Information Engineering, University of Tsukuba
  1-1-1 Tennodai, Tsukuba, Ibaraki 305-8573, Japan
 
