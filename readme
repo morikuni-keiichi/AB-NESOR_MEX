@@ -1,5 +1,5 @@
-Matlab-Mex codes in C for the AB-GMRES method preconditioned by the NE-SOR inner iterations
-Copyright 2014 Keiichi Morikuni morikuni.keiichi.fw at sign u.tsukuba.ac.jp, October 26, 2014
+MATLAB-Mex codes in C for the AB-GMRES method preconditioned by the NE-SOR inner iterations
+Copyright 2014 Keiichi Morikuni, October 26, 2014
 URL:   http://researchmap.jp/KeiichiMorikuni/
 
 
@@ -36,7 +36,7 @@ AB-GMRES preconditioned by NE-SOR inner iterations involves the following files:
    readme     last update December 22, 2014
 
 
-To compile the codes in Matlab, execute
+To compile the codes in MATLAB, execute
 
   >> blaslib = fullfile(matlabroot, 'extern', 'lib', computer('arch'), 'microsoft', 'libmwblas.lib');
   >> mex('-largeArrayDims', 'ABNESOR.c', blaslib)
